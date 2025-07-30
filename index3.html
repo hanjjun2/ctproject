@@ -155,7 +155,7 @@
 <body>
 
     <div class="tab-buttons">
-        <button class="tab-button active" onclick="openTab(event, 'chungcheong')">충청도 광합성 분석</button>
+        <button class="tab-button active" onclick="openTab(event, 'chungcheong')">지역별 광합성 분석</button>
         <button class="tab-button" onclick="openTab(event, 'scenario')">상황별 광합성 예측</button>
     </div>
 
@@ -250,7 +250,7 @@
 
             // 탭 전환 시 차트 및 슬라이더 값 초기화/업데이트
             if (tabName === 'chungcheong') {
-                // 충청도 분석 탭으로 돌아올 때 차트 다시 그리기 (필요하다면)
+                // 지역별 분석 탭으로 돌아올 때 차트 다시 그리기 (필요하다면)
                 // calculateEfficiency()를 자동으로 호출하지는 않음 (사용자 입력 후 분석 버튼 클릭 유도)
             } else if (tabName === 'scenario') {
                 // 시나리오 탭으로 돌아올 때 슬라이더 값 업데이트
