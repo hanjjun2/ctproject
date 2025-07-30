@@ -159,7 +159,6 @@
         <button class="tab-button" onclick="openTab(event, 'scenario')">상황별 광합성 예측</button>
     </div>
 
-    <!-- Section 1: 지역별 광합성 분석 -->
     <div id="chungcheong" class="tab-content active">
         <h1>지역별 광합성 효율 분석기</h1>
         <p>실시간 정보를 확인하고 아래에 입력해 주세요:</p>
@@ -188,14 +187,12 @@
         <div id="aiExplain"></div>
     </div>
 
-    <!-- Section 2: 시나리오 기반 예측 -->
     <div id="scenario" class="tab-content">
         <h1>🌿 상황별 광합성 예측 모델 (확장판)</h1>
         <p>다양한 식물·환경 시나리오 선택 → 조건 조절 → 광합성량 확인 → AI가 최적 조건 및 이유 설명</p>
 
         <label for="scenario">🌍 상황 선택:</label>
-        <select id="scenarioSelect" onchange="updateValues()"> <!-- ID 변경: scenarioSelect -->
-            <option value="tropical">① 열대 식물 (고온다습)</option>
+        <select id="scenarioSelect" onchange="updateValues()"> <option value="tropical">① 열대 식물 (고온다습)</option>
             <option value="winter">② 겨울철 온실 (저온, 빛 부족)</option>
             <option value="mountain">③ 고산 식물 (CO₂ 낮음)</option>
             <option value="desert">④ 사막 식물 (고온, 빛 강함, 물 부족)</option>
@@ -261,10 +258,24 @@
         // 지역별 효율 분석 시스템
         let chartInstance = null;
         function getScore(value, low, high, optimal) {
-            if (value < low || value > high) return 0.5; // 범위 밖이면 0.5점
-            const diff = Math.abs(value - optimal);
-            const maxDiff = Math.max(Math.abs(optimal - low), Math.abs(optimal - high));
-            return 1.0 - (diff / maxDiff);
+            // 값이 최적 범위(optimal)보다 낮을 때의 점수 계산
+            if (value < optimal) {
+                // (optimal - low) 구간에서 얼마나 벗어났는지에 따라 점수 부여
+                // 예를 들어, optimal이 1000, low가 200일 때 200에 가까울수록 점수가 낮아짐
+                if (value < low) return 0; // 최소 범위보다 낮으면 0점
+                return 1.0 - (optimal - value) / (optimal - low);
+            }
+            // 값이 최적 범위(optimal)보다 높을 때의 점수 계산
+            else if (value > optimal) {
+                // (high - optimal) 구간에서 얼마나 벗어났는지에 따라 점수 부여
+                // 예를 들어, optimal이 1000, high가 2000일 때 2000에 가까울수록 점수가 낮아짐
+                if (value > high) return 0; // 최대 범위보다 높으면 0점
+                return 1.0 - (value - optimal) / (high - optimal);
+            }
+            // 값이 최적(optimal)일 때
+            else {
+                return 1.0; // 최적값일 경우 1.0 (100%)
+            }
         }
 
         function calculateEfficiency() {
