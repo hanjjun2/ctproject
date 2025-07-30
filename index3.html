@@ -1,144 +1,427 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-  <meta charset="UTF-8">
-  <title>상황별 광합성 조건 예측 (확장판)</title>
-  <style>
-    body { font-family: Arial, sans-serif; padding: 30px; max-width: 800px; margin: auto; }
-    label, select { font-weight: bold; font-size: 14px; }
-    .slider-container { margin: 15px 0; }
-    .result, .ai-result { background: #eef; margin-top: 20px; padding: 15px; border-left: 5px solid #3a7; white-space: pre-wrap; }
-    button { margin-top: 10px; padding: 10px; background-color: #4CAF50; border: none; color: white; cursor: pointer; }
-    button:hover { background-color: #388e3c; }
-    .checkbox-container { margin-top: 10px; }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>광합성 효율 통합 분석기</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            padding: 20px;
+            max-width: 900px;
+            margin: auto;
+            background: #f9fdf9;
+            color: #333;
+        }
+
+        h1, h2 {
+            color: #2a7d2e;
+            border-bottom: 1px solid #ccc;
+            padding-bottom: 5px;
+            margin-top: 30px; /* 섹션 제목 상단 여백 */
+        }
+
+        /* 탭 메뉴 스타일 */
+        .tab-buttons {
+            display: flex;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #ddd;
+        }
+
+        .tab-button {
+            background-color: #eee;
+            border: 1px solid #ddd;
+            border-bottom: none;
+            padding: 10px 20px;
+            cursor: pointer;
+            font-size: 16px;
+            border-top-left-radius: 8px;
+            border-top-right-radius: 8px;
+            margin-right: 5px;
+            transition: background-color 0.3s ease;
+        }
+
+        .tab-button:hover {
+            background-color: #e0e0e0;
+        }
+
+        .tab-button.active {
+            background-color: #fff;
+            border-bottom: 2px solid #2a7d2e; /* 활성 탭 하단 강조 */
+            color: #2a7d2e;
+            font-weight: bold;
+            transform: translateY(2px); /* 약간 아래로 내려와서 선택된 느낌 */
+            z-index: 1; /* 다른 탭보다 위로 */
+        }
+
+        /* 탭 콘텐츠 스타일 */
+        .tab-content {
+            display: none; /* 기본적으로 모든 탭 콘텐츠 숨김 */
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-top: none;
+            background-color: #fff;
+            border-bottom-left-radius: 8px;
+            border-bottom-right-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        }
+
+        .tab-content.active {
+            display: block; /* 활성 탭 콘텐츠만 표시 */
+        }
+
+        label {
+            display: block;
+            margin-top: 15px;
+            font-weight: bold;
+        }
+
+        input[type="number"], select {
+            width: calc(100% - 12px); /* 패딩 고려 */
+            padding: 6px;
+            margin-top: 5px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+
+        button {
+            margin-top: 20px;
+            padding: 10px 20px;
+            font-size: 16px;
+            background-color: #2a7d2e;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+        button:hover {
+            background-color: #1e5e22;
+        }
+
+        .link-buttons {
+            margin-top: 10px;
+        }
+
+        .link-buttons a {
+            display: inline-block;
+            margin-right: 10px;
+            background-color: #2980b9;
+            color: white;
+            padding: 5px 10px;
+            border-radius: 5px;
+            text-decoration: none;
+            font-size: 14px;
+            transition: background-color 0.3s ease;
+        }
+        .link-buttons a:hover {
+            background-color: #206a96;
+        }
+
+        .result, .ai-result {
+            margin-top: 20px;
+            font-size: 1.1em;
+            font-weight: bold;
+            background: #eef;
+            padding: 15px;
+            border-left: 5px solid #3a7;
+            white-space: pre-wrap;
+            border-radius: 4px;
+        }
+
+        #aiExplain {
+            background: #f4f9f4;
+            padding: 15px;
+            border-left: 5px solid #2a7d2e;
+            font-size: 14px;
+            margin-top: 20px;
+            border-radius: 4px;
+        }
+
+        .slider-container {
+            margin-top: 15px;
+        }
+        input[type="range"] {
+            width: calc(100% - 12px);
+            margin-top: 5px;
+        }
+
+        .checkbox-container {
+            margin-top: 15px;
+        }
+    </style>
 </head>
 <body>
 
-  <h2>🌿 상황별 광합성 예측 모델 (확장판)</h2>
-  <p>다양한 식물·환경 시나리오 선택 → 조건 조절 → 광합성량 확인 → AI가 최적 조건 및 이유 설명</p>
+    <div class="tab-buttons">
+        <button class="tab-button active" onclick="openTab(event, 'chungcheong')">충청도 광합성 분석</button>
+        <button class="tab-button" onclick="openTab(event, 'scenario')">상황별 광합성 예측</button>
+    </div>
 
-  <label for="scenario">🌍 상황 선택:</label>
-  <select id="scenario" onchange="updateValues()">
-    <option value="tropical">① 열대 식물 (고온다습)</option>
-    <option value="winter">② 겨울철 온실 (저온, 빛 부족)</option>
-    <option value="mountain">③ 고산 식물 (CO₂ 낮음)</option>
-    <option value="desert">④ 사막 식물 (고온, 빛 강함, 물 부족)</option>
-    <option value="shade">⑤ 그늘 식물 (빛 약함)</option>
-    <option value="aquatic">⑥ 수생 식물 (수온 낮고 CO₂ 수중 제한)</option>
-  </select>
+    <!-- Section 1: 지역별 광합성 분석 -->
+    <div id="chungcheong" class="tab-content active">
+        <h1>지역별 광합성 효율 분석기</h1>
+        <p>실시간 정보를 확인하고 아래에 입력해 주세요:</p>
 
-  <div class="slider-container">
-    <label>🌡️ 온도 (°C): <span id="tempVal">25</span></label>
-    <input type="range" id="temp" min="0" max="50" value="25">
-  </div>
+        <div class="link-buttons">
+            <a href="https://www.weather.go.kr/w/weather/observation/current.jsp" target="_blank">🌡️ 현재 온도 확인</a>
+            <a href="https://data.kma.go.kr/cmmn/main.do" target="_blank">☀️ 일사량 데이터</a>
+            <a href="https://www.airkorea.or.kr/web" target="_blank">🌿 CO₂ 농도</a>
+        </div>
 
-  <div class="slider-container">
-    <label>💡 빛 세기 (lux): <span id="lightVal">5000</span></label>
-    <input type="range" id="light" min="0" max="10000" value="5000" step="100">
-  </div>
+        <label for="temp">🌡️ 온도 (°C):</label>
+        <input type="number" id="temp" placeholder="예: 33">
 
-  <div class="slider-container">
-    <label>🌬️ CO₂ 농도 (ppm): <span id="co2Val">400</span></label>
-    <input type="range" id="co2" min="200" max="1000" value="400" step="10">
-  </div>
+        <label for="light">☀️ 빛의 세기 (μmol/m²/s):</label>
+        <input type="number" id="light" placeholder="예: 1000">
 
-  <div class="result" id="photosynthesisRate">🌱 광합성량: 계산 중...</div>
+        <label for="co2">🌿 이산화탄소 농도 (ppm):</label>
+        <input type="number" id="co2" placeholder="예: 400">
 
-  <div class="checkbox-container">
-    <label><input type="checkbox" id="easyMode"> 쉽게 설명 보기</label>
-  </div>
+        <button onclick="calculateEfficiency()">📊 광합성 효율 분석</button>
+        <div class="result" id="output"></div>
 
-  <button onclick="predictOptimal()">🤖 AI 도우미: 최적 조건 보기</button>
-  <div class="ai-result" id="aiResult">AI 예측 결과가 여기에 표시됩니다.</div>
+        <div id="chartContainer">
+            <canvas id="effChart" width="600" height="300"></canvas>
+        </div>
+        <div id="aiExplain"></div>
+    </div>
 
-<script>
-  const tempSlider = document.getElementById('temp');
-  const lightSlider = document.getElementById('light');
-  const co2Slider = document.getElementById('co2');
-  const tempVal = document.getElementById('tempVal');
-  const lightVal = document.getElementById('lightVal');
-  const co2Val = document.getElementById('co2Val');
-  const rateDisplay = document.getElementById('photosynthesisRate');
-  const aiResult = document.getElementById('aiResult');
-  const scenarioSelect = document.getElementById('scenario');
-  const easyMode = document.getElementById('easyMode');
+    <!-- Section 2: 시나리오 기반 예측 -->
+    <div id="scenario" class="tab-content">
+        <h1>🌿 상황별 광합성 예측 모델 (확장판)</h1>
+        <p>다양한 식물·환경 시나리오 선택 → 조건 조절 → 광합성량 확인 → AI가 최적 조건 및 이유 설명</p>
 
-  function getScenarioSettings() {
-    switch (scenarioSelect.value) {
-      case 'tropical': return { temp: 30, light: 8000, co2: 700 };
-      case 'winter': return { temp: 20, light: 3000, co2: 500 };
-      case 'mountain': return { temp: 18, light: 6000, co2: 350 };
-      case 'desert': return { temp: 35, light: 9000, co2: 600 };
-      case 'shade': return { temp: 22, light: 2000, co2: 450 };
-      case 'aquatic': return { temp: 18, light: 4000, co2: 300 };
-      default: return { temp: 25, light: 5000, co2: 400 };
-    }
-  }
+        <label for="scenario">🌍 상황 선택:</label>
+        <select id="scenarioSelect" onchange="updateValues()"> <!-- ID 변경: scenarioSelect -->
+            <option value="tropical">① 열대 식물 (고온다습)</option>
+            <option value="winter">② 겨울철 온실 (저온, 빛 부족)</option>
+            <option value="mountain">③ 고산 식물 (CO₂ 낮음)</option>
+            <option value="desert">④ 사막 식물 (고온, 빛 강함, 물 부족)</option>
+            <option value="shade">⑤ 그늘 식물 (빛 약함)</option>
+            <option value="aquatic">⑥ 수생 식물 (수온 낮고 CO₂ 수중 제한)</option>
+        </select>
 
-  function calculatePhotosynthesis(temp, light, co2) {
-    const opt = getScenarioSettings();
-    const tempFactor = Math.exp(-Math.pow((temp - opt.temp) / 10, 2));
-    const lightFactor = Math.exp(-Math.pow((light - opt.light) / 2000, 2));
-    const co2Factor = Math.exp(-Math.pow((co2 - opt.co2) / 200, 2));
-    return tempFactor * lightFactor * co2Factor * 100;
-  }
+        <div class="slider-container">
+            <label>🌡️ 온도 (°C): <span id="tempVal">25</span></label>
+            <input type="range" id="tempSlider" min="0" max="50" value="25">
+        </div>
 
-  function updateValues() {
-    const t = parseInt(tempSlider.value);
-    const l = parseInt(lightSlider.value);
-    const c = parseInt(co2Slider.value);
-    tempVal.textContent = t; lightVal.textContent = l; co2Val.textContent = c;
-    const rate = calculatePhotosynthesis(t, l, c);
-    rateDisplay.textContent = `🌱 광합성량: ${rate.toFixed(2)} (모의 값)`;
-    aiResult.textContent = "AI 예측 결과가 여기에 표시됩니다.";
-  }
+        <div class="slider-container">
+            <label>💡 빛 세기 (lux): <span id="lightVal">5000</span></label>
+            <input type="range" id="lightSlider" min="0" max="10000" value="5000" step="100">
+        </div>
 
-  function predictOptimal() {
-    let best = { rate: -1, temp:0, light:0, co2:0 };
-    for (let t=10; t<=40; t+=1) {
-      for (let l=1000; l<=9000; l+=500) {
-        for (let c=300; c<=800; c+=50) {
-          const rate = calculatePhotosynthesis(t,l,c);
-          if (rate > best.rate) best = { rate, temp:t, light:l, co2:c };
+        <div class="slider-container">
+            <label>🌬️ CO₂ 농도 (ppm): <span id="co2Val">400</span></label>
+            <input type="range" id="co2Slider" min="200" max="1000" value="400" step="10">
+        </div>
+
+        <div class="result" id="photosynthesisRate">🌱 광합성량: 계산 중...</div>
+
+        <div class="checkbox-container">
+            <label><input type="checkbox" id="easyMode"> 쉽게 설명 보기</label>
+        </div>
+
+        <button onclick="predictOptimal()">🤖 AI 도우미: 최적 조건 보기</button>
+        <div class="ai-result" id="aiResult">AI 예측 결과가 여기에 표시됩니다.</div>
+    </div>
+
+    <script>
+        // 탭 전환 기능
+        function openTab(evt, tabName) {
+            let i, tabcontent, tabbuttons;
+
+            tabcontent = document.getElementsByClassName("tab-content");
+            for (i = 0; i < tabcontent.length; i++) {
+                tabcontent[i].style.display = "none";
+                tabcontent[i].classList.remove("active");
+            }
+
+            tabbuttons = document.getElementsByClassName("tab-button");
+            for (i = 0; i < tabbuttons.length; i++) {
+                tabbuttons[i].classList.remove("active");
+            }
+
+            document.getElementById(tabName).style.display = "block";
+            document.getElementById(tabName).classList.add("active");
+            evt.currentTarget.classList.add("active");
+
+            // 탭 전환 시 차트 및 슬라이더 값 초기화/업데이트
+            if (tabName === 'chungcheong') {
+                // 충청도 분석 탭으로 돌아올 때 차트 다시 그리기 (필요하다면)
+                // calculateEfficiency()를 자동으로 호출하지는 않음 (사용자 입력 후 분석 버튼 클릭 유도)
+            } else if (tabName === 'scenario') {
+                // 시나리오 탭으로 돌아올 때 슬라이더 값 업데이트
+                updateValues();
+            }
         }
-      }
-    }
 
-    const scenario = scenarioSelect.value;
-    const easy = easyMode.checked;
-    let explanation = "", easyText = "";
+        // 지역별 효율 분석 시스템
+        let chartInstance = null;
+        function getScore(value, low, high, optimal) {
+            if (value < low || value > high) return 0.5; // 범위 밖이면 0.5점
+            const diff = Math.abs(value - optimal);
+            const maxDiff = Math.max(Math.abs(optimal - low), Math.abs(optimal - high));
+            return 1.0 - (diff / maxDiff);
+        }
 
-    switch (scenario) {
-      case "tropical":
-        explanation = `고온다습한 열대 환경에서는 효소가 활발히 작동해 광합성 속도가 빠릅니다.\n빛과 CO₂가 충분하면 더욱 효과적입니다.`;
-        easyText = `→ 따뜻하고 습한 환경, 밝은 빛, 많은 CO₂가 열대 식물에 좋아요.`;
-        break;
-      case "winter":
-        explanation = `겨울은 기온과 빛이 낮아 광합성이 느립니다.\n따라서 적당한 온도와 빛, CO₂ 농도가 필요합니다.`;
-        easyText = `→ 추운 겨울엔 따뜻하고 밝은 환경, CO₂를 충분히 공급해 주세요.`;
-        break;
-      case "mountain":
-        explanation = `고산은 CO₂ 농도도 낮고 기온도 낮습니다.\n빛은 있지만 효소 작용과 CO₂ 활용이 제한됩니다.`;
-        easyText = `→ 높은 산에서는 낮은 CO₂를 고려해 온도와 빛을 잘 맞춰야 해요.`;
-        break;
-      case "desert":
-        explanation = `사막 식물은 고온과 강한 빛에 적응하고, 물 손실을 줄이기 위해 효율적입니다.\n중간 정도의 CO₂가 적절히 작용합니다.`;
-        easyText = `→ 사막 환경엔 뜨겁고 밝고, CO₂는 너무 많지 않게!`;
-        break;
-      case "shade":
-        explanation = `그늘 식물은 빛이 약하므로 낮은 빛에서도 작용하는 효소가 중요합니다.\n따뜻한 온도와 낮은 빛, 적절한 CO₂ 농도가 필요합니다.`;
-        easyText = `→ 빛이 적어도 살아남는 식물! 온도와 CO₂ 조절이 핵심이에요.`;
-        break;
-      case "aquatic":
-        explanation = `수생 식물은 수온이 낮고 CO₂ 공급이 제한됩니다.\n적절한 온도와 빛 조건이 광합성에 중요합니다.`;
-        easyText = `→ 물속 식물은 시원한 온도, 보통 빛, 낮은 CO₂에서도 성장해요.`;
-        break;
-      default:
-        explanation = `선택한 환경마다 최적 조건은 달라집니다.`;
-    }
+        function calculateEfficiency() {
+            const temp = parseFloat(document.getElementById("temp").value);
+            const light = parseFloat(document.getElementById("light").value);
+            const co2 = parseFloat(document.getElementById("co2").value);
 
-    aiResult.innerHTML = `
+            if (isNaN(temp) || isNaN(light) || isNaN(co2)) {
+                document.getElementById("output").innerHTML = "❗ 모든 값을 정확히 입력해 주세요.";
+                return;
+            }
+
+            const tempScore = getScore(temp, 5, 40, 25);
+            const lightScore = getScore(light, 200, 2000, 1000);
+            const co2Score = getScore(co2, 100, 1000, 400);
+
+            const efficiency = ((tempScore + lightScore + co2Score) / 3) * 100;
+            const efficiencyFixed = efficiency.toFixed(1);
+            let message = `📊 현재 광합성 효율은 <strong>${efficiencyFixed}%</strong> 입니다.<br><br>`;
+            let aiMsg = "";
+
+            if (efficiency >= 90) {
+                message += "✅ 매우 이상적인 조건입니다!";
+                aiMsg = "세 가지 조건 모두 식물이 가장 좋아하는 수준에 가깝습니다. 광합성이 활발히 진행됩니다.";
+            } else if (efficiency >= 70) {
+                message += "👍 좋은 조건입니다.";
+                aiMsg = "대체로 양호한 환경입니다. 특히 온도나 CO₂가 이상적인 수준일 수 있습니다.";
+            } else if (efficiency >= 50) {
+                message += "⚠️ 조건이 조금 부족합니다.";
+                aiMsg = "한두 가지 요소(예: 온도 또는 빛)가 최적에서 벗어나 있어 광합성 효율이 떨어질 수 있습니다.";
+            } else {
+                message += "❌ 광합성 효율이 매우 낮습니다.";
+                aiMsg = "조건이 전반적으로 좋지 않아 식물이 생장하기 어려운 환경입니다.";
+            }
+
+            document.getElementById("output").innerHTML = message;
+            const ctx = document.getElementById('effChart').getContext('2d');
+            if (chartInstance) chartInstance.destroy();
+
+            chartInstance = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: ['온도', '빛의 세기', 'CO₂'],
+                    datasets: [{
+                        label: '요소별 효율 점수 (%)',
+                        data: [tempScore * 100, lightScore * 100, co2Score * 100],
+                        borderColor: '#2ecc71',
+                        backgroundColor: 'rgba(46, 204, 113, 0.1)',
+                        tension: 0.3,
+                        pointBackgroundColor: '#27ae60',
+                        fill: true
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        y: { beginAtZero: true, max: 100 }
+                    }
+                }
+            });
+
+            document.getElementById("aiExplain").innerHTML =
+                `<strong>🤖 AI 분석 해설:</strong><br>${aiMsg}<br><br>` +
+                `🔍 세부 점수 — 온도: ${(tempScore * 100).toFixed(1)}%, 빛: ${(lightScore * 100).toFixed(1)}%, CO₂: ${(co2Score * 100).toFixed(1)}%`;
+        }
+
+        // 시나리오 기반 예측 시스템
+        const tempSlider = document.getElementById('tempSlider');
+        const lightSlider = document.getElementById('lightSlider');
+        const co2Slider = document.getElementById('co2Slider');
+        const tempVal = document.getElementById('tempVal');
+        const lightVal = document.getElementById('lightVal');
+        const co2Val = document.getElementById('co2Val');
+        const rateDisplay = document.getElementById('photosynthesisRate');
+        const aiResult = document.getElementById('aiResult');
+        const scenarioSelect = document.getElementById('scenarioSelect'); // ID 변경 반영
+        const easyMode = document.getElementById('easyMode');
+
+        function getScenarioSettings() {
+            switch (scenarioSelect.value) {
+                case 'tropical': return { temp: 30, light: 8000, co2: 700 };
+                case 'winter': return { temp: 20, light: 3000, co2: 500 };
+                case 'mountain': return { temp: 18, light: 6000, co2: 350 };
+                case 'desert': return { temp: 35, light: 9000, co2: 600 };
+                case 'shade': return { temp: 22, light: 2000, co2: 450 };
+                case 'aquatic': return { temp: 18, light: 4000, co2: 300 };
+                default: return { temp: 25, light: 5000, co2: 400 };
+            }
+        }
+
+        function calculatePhotosynthesis(temp, light, co2) {
+            const opt = getScenarioSettings();
+            // 각 요소가 최적값에 가까울수록 높은 값을 반환하는 가우시안 함수 형태
+            const tempFactor = Math.exp(-Math.pow((temp - opt.temp) / 10, 2));
+            const lightFactor = Math.exp(-Math.pow((light - opt.light) / 2000, 2));
+            const co2Factor = Math.exp(-Math.pow((co2 - opt.co2) / 200, 2));
+            // 세 인자의 곱으로 최종 광합성량 결정 (0~100 사이 값)
+            return tempFactor * lightFactor * co2Factor * 100;
+        }
+
+        function updateValues() {
+            const t = parseInt(tempSlider.value);
+            const l = parseInt(lightSlider.value);
+            const c = parseInt(co2Slider.value);
+            tempVal.textContent = t;
+            lightVal.textContent = l;
+            co2Val.textContent = c;
+            const rate = calculatePhotosynthesis(t, l, c);
+            rateDisplay.textContent = `🌱 광합성량: ${rate.toFixed(2)} (모의 값)`;
+            aiResult.textContent = "AI 예측 결과가 여기에 표시됩니다."; // 슬라이더 조작 시 AI 결과 초기화
+        }
+
+        function predictOptimal() {
+            let best = { rate: -1, temp: 0, light: 0, co2: 0 };
+            // 최적 조건을 찾기 위한 탐색 범위
+            // 온도는 10~40°C, 빛은 1000~9000 lux, CO2는 300~800 ppm
+            for (let t = 10; t <= 40; t++) {
+                for (let l = 1000; l <= 9000; l += 500) {
+                    for (let c = 300; c <= 800; c += 50) {
+                        const rate = calculatePhotosynthesis(t, l, c);
+                        if (rate > best.rate) best = { rate, temp: t, light: l, co2: c };
+                    }
+                }
+            }
+
+            const scenario = scenarioSelect.value;
+            const easy = easyMode.checked;
+            let explanation = "", easyText = "";
+
+            switch (scenario) {
+                case "tropical":
+                    explanation = `고온다습한 열대 환경에서는 효소가 활발히 작동해 광합성 속도가 빠릅니다.\n빛과 CO₂가 충분하면 더욱 효과적입니다.`;
+                    easyText = `→ 따뜻하고 습한 환경, 밝은 빛, 많은 CO₂가 열대 식물에 좋아요.`;
+                    break;
+                case "winter":
+                    explanation = `겨울은 기온과 빛이 낮아 광합성이 느립니다.\n따라서 적당한 온도와 빛, CO₂ 농도가 필요합니다.`;
+                    easyText = `→ 추운 겨울엔 따뜻하고 밝은 환경, CO₂를 충분히 공급해 주세요.`;
+                    break;
+                case "mountain":
+                    explanation = `고산은 CO₂ 농도도 낮고 기온도 낮습니다.\n빛은 있지만 효소 작용과 CO₂ 활용이 제한됩니다.`;
+                    easyText = `→ 높은 산에서는 낮은 CO₂를 고려해 온도와 빛을 잘 맞춰야 해요.`;
+                    break;
+                case "desert":
+                    explanation = `사막 식물은 고온과 강한 빛에 적응하고, 물 손실을 줄이기 위해 효율적입니다.\n중간 정도의 CO₂가 적절히 작용합니다.`;
+                    easyText = `→ 사막 환경엔 뜨겁고 밝고, CO₂는 너무 많지 않게!`;
+                    break;
+                case "shade":
+                    explanation = `그늘 식물은 빛이 약하므로 낮은 빛에서도 작용하는 효소가 중요합니다.\n따뜻한 온도와 낮은 빛, 적절한 CO₂ 농도가 필요합니다.`;
+                    easyText = `→ 빛이 적어도 살아남는 식물! 온도와 CO₂ 조절이 핵심이에요.`;
+                    break;
+                case "aquatic":
+                    explanation = `수생 식물은 수온이 낮고 CO₂ 공급이 제한됩니다.\n적절한 온도와 빛 조건이 광합성에 중요합니다.`;
+                    easyText = `→ 물속 식물은 시원한 온도, 보통 빛, 낮은 CO₂에서도 성장해요.`;
+                    break;
+            }
+
+            aiResult.innerHTML = `
 ✅ <strong>${scenarioSelect.options[scenarioSelect.selectedIndex].text}</strong>의 최적 조건:
 온도: <strong>${best.temp}°C</strong>
 빛 세기: <strong>${best.light} lux</strong>
@@ -148,15 +431,22 @@ CO₂ 농도: <strong>${best.co2} ppm</strong>
 🔍 <strong>AI 설명:</strong>
 ${explanation}
 ${easy ? `\n💡 <strong>쉬운 설명:</strong> ${easyText}` : ""}`;
-  }
+        }
 
-  tempSlider.oninput = updateValues;
-  lightSlider.oninput = updateValues;
-  co2Slider.oninput = updateValues;
-  scenarioSelect.onchange = updateValues;
+        // 슬라이더 및 시나리오 선택 이벤트 리스너
+        tempSlider.oninput = updateValues;
+        lightSlider.oninput = updateValues;
+        co2Slider.oninput = updateValues;
+        scenarioSelect.onchange = updateValues;
 
-  updateValues();
-</script>
-
+        // 페이지 로드 시 첫 번째 탭 활성화 및 초기 값 업데이트
+        document.addEventListener('DOMContentLoaded', (event) => {
+            // 초기 탭 활성화 (첫 번째 탭)
+            document.querySelector('.tab-button').click();
+            // 시나리오 탭의 초기 값 업데이트 (만약 시나리오 탭이 첫 탭이라면)
+            // 아니면 해당 탭이 활성화될 때 updateValues()가 호출되도록 openTab 함수에서 처리
+            updateValues(); // 초기 로딩 시 시나리오 슬라이더 값 반영
+        });
+    </script>
 </body>
 </html>
