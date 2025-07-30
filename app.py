@@ -33,7 +33,7 @@ with col1:
         htmlviewer.html(html2, height=1200)
 
     with st.expander('Content #4 ...'):
-        htmlviewer.html(html3, height=1200)
+        htmlviewer.html(html3, height=1400)
 
 # Side Column
 with col2:
