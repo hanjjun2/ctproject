@@ -2,45 +2,21 @@
 <html lang="ko">
 <head>
   <meta charset="UTF-8">
-  <title>상황별 광합성 조건 예측</title>
+  <title>상황별 광합성 조건 예측 (확장판)</title>
   <style>
-    body {
-      font-family: Arial, sans-serif;
-      padding: 30px;
-      max-width: 720px;
-      margin: auto;
-    }
-    label, select {
-      font-weight: bold;
-      font-size: 14px;
-    }
-    .slider-container {
-      margin: 15px 0;
-    }
-    .result, .ai-result {
-      background: #eef;
-      margin-top: 20px;
-      padding: 15px;
-      border-left: 5px solid #3a7;
-      white-space: pre-wrap; /* 줄바꿈 유지 */
-    }
-    button {
-      margin-top: 10px;
-      padding: 10px;
-      background-color: #4CAF50;
-      border: none;
-      color: white;
-      cursor: pointer;
-    }
-    button:hover {
-      background-color: #388e3c;
-    }
+    body { font-family: Arial, sans-serif; padding: 30px; max-width: 800px; margin: auto; }
+    label, select { font-weight: bold; font-size: 14px; }
+    .slider-container { margin: 15px 0; }
+    .result, .ai-result { background: #eef; margin-top: 20px; padding: 15px; border-left: 5px solid #3a7; white-space: pre-wrap; }
+    button { margin-top: 10px; padding: 10px; background-color: #4CAF50; border: none; color: white; cursor: pointer; }
+    button:hover { background-color: #388e3c; }
+    .checkbox-container { margin-top: 10px; }
   </style>
 </head>
 <body>
 
-  <h2>🌿 상황별 광합성 예측 모델</h2>
-  <p>다양한 식물 환경 상황을 선택하고, 온도, 빛 세기, CO₂ 농도를 조절하여 광합성량을 탐구해 보세요.</p>
+  <h2>🌿 상황별 광합성 예측 모델 (확장판)</h2>
+  <p>다양한 식물·환경 시나리오 선택 → 조건 조절 → 광합성량 확인 → AI가 최적 조건 및 이유 설명</p>
 
   <label for="scenario">🌍 상황 선택:</label>
   <select id="scenario" onchange="updateValues()">
@@ -48,6 +24,8 @@
     <option value="winter">② 겨울철 온실 (저온, 빛 부족)</option>
     <option value="mountain">③ 고산 식물 (CO₂ 낮음)</option>
     <option value="desert">④ 사막 식물 (고온, 빛 강함, 물 부족)</option>
+    <option value="shade">⑤ 그늘 식물 (빛 약함)</option>
+    <option value="aquatic">⑥ 수생 식물 (수온 낮고 CO₂ 수중 제한)</option>
   </select>
 
   <div class="slider-container">
@@ -67,108 +45,118 @@
 
   <div class="result" id="photosynthesisRate">🌱 광합성량: 계산 중...</div>
 
+  <div class="checkbox-container">
+    <label><input type="checkbox" id="easyMode"> 쉽게 설명 보기</label>
+  </div>
+
   <button onclick="predictOptimal()">🤖 AI 도우미: 최적 조건 보기</button>
   <div class="ai-result" id="aiResult">AI 예측 결과가 여기에 표시됩니다.</div>
 
-  <script>
-    const tempSlider = document.getElementById('temp');
-    const lightSlider = document.getElementById('light');
-    const co2Slider = document.getElementById('co2');
+<script>
+  const tempSlider = document.getElementById('temp');
+  const lightSlider = document.getElementById('light');
+  const co2Slider = document.getElementById('co2');
+  const tempVal = document.getElementById('tempVal');
+  const lightVal = document.getElementById('lightVal');
+  const co2Val = document.getElementById('co2Val');
+  const rateDisplay = document.getElementById('photosynthesisRate');
+  const aiResult = document.getElementById('aiResult');
+  const scenarioSelect = document.getElementById('scenario');
+  const easyMode = document.getElementById('easyMode');
 
-    const tempVal = document.getElementById('tempVal');
-    const lightVal = document.getElementById('lightVal');
-    const co2Val = document.getElementById('co2Val');
-    const rateDisplay = document.getElementById('photosynthesisRate');
-    const aiResult = document.getElementById('aiResult');
-    const scenarioSelect = document.getElementById('scenario');
-
-    function getScenarioSettings() {
-      const scenario = scenarioSelect.value;
-
-      switch (scenario) {
-        case 'tropical': return { temp: 30, light: 8000, co2: 700 };
-        case 'winter': return { temp: 20, light: 3000, co2: 500 };
-        case 'mountain': return { temp: 18, light: 6000, co2: 350 };
-        case 'desert': return { temp: 35, light: 9000, co2: 600 };
-        default: return { temp: 25, light: 5000, co2: 400 };
-      }
+  function getScenarioSettings() {
+    switch (scenarioSelect.value) {
+      case 'tropical': return { temp: 30, light: 8000, co2: 700 };
+      case 'winter': return { temp: 20, light: 3000, co2: 500 };
+      case 'mountain': return { temp: 18, light: 6000, co2: 350 };
+      case 'desert': return { temp: 35, light: 9000, co2: 600 };
+      case 'shade': return { temp: 22, light: 2000, co2: 450 };
+      case 'aquatic': return { temp: 18, light: 4000, co2: 300 };
+      default: return { temp: 25, light: 5000, co2: 400 };
     }
+  }
 
-    function calculatePhotosynthesis(temp, light, co2, scenario) {
-      const opt = getScenarioSettings();
+  function calculatePhotosynthesis(temp, light, co2) {
+    const opt = getScenarioSettings();
+    const tempFactor = Math.exp(-Math.pow((temp - opt.temp) / 10, 2));
+    const lightFactor = Math.exp(-Math.pow((light - opt.light) / 2000, 2));
+    const co2Factor = Math.exp(-Math.pow((co2 - opt.co2) / 200, 2));
+    return tempFactor * lightFactor * co2Factor * 100;
+  }
 
-      const tempFactor = Math.exp(-Math.pow((temp - opt.temp) / 10, 2));
-      const lightFactor = Math.exp(-Math.pow((light - opt.light) / 2000, 2));
-      const co2Factor = Math.exp(-Math.pow((co2 - opt.co2) / 200, 2));
+  function updateValues() {
+    const t = parseInt(tempSlider.value);
+    const l = parseInt(lightSlider.value);
+    const c = parseInt(co2Slider.value);
+    tempVal.textContent = t; lightVal.textContent = l; co2Val.textContent = c;
+    const rate = calculatePhotosynthesis(t, l, c);
+    rateDisplay.textContent = `🌱 광합성량: ${rate.toFixed(2)} (모의 값)`;
+    aiResult.textContent = "AI 예측 결과가 여기에 표시됩니다.";
+  }
 
-      return tempFactor * lightFactor * co2Factor * 100;
-    }
-
-    function updateValues() {
-      const temp = parseInt(tempSlider.value);
-      const light = parseInt(lightSlider.value);
-      const co2 = parseInt(co2Slider.value);
-
-      tempVal.textContent = temp;
-      lightVal.textContent = light;
-      co2Val.textContent = co2;
-
-      const scenario = scenarioSelect.value;
-      const rate = calculatePhotosynthesis(temp, light, co2, scenario);
-      rateDisplay.textContent = `🌱 광합성량: ${rate.toFixed(2)} (모의 값)`;
-      aiResult.textContent = "AI 예측 결과가 여기에 표시됩니다.";
-    }
-
-    function predictOptimal() {
-      const scenario = scenarioSelect.value;
-      let best = { rate: -1, temp: 0, light: 0, co2: 0 };
-
-      for (let t = 10; t <= 40; t += 1) {
-        for (let l = 1000; l <= 9000; l += 500) {
-          for (let c = 300; c <= 800; c += 50) {
-            const rate = calculatePhotosynthesis(t, l, c, scenario);
-            if (rate > best.rate) {
-              best = { rate, temp: t, light: l, co2: c };
-            }
-          }
+  function predictOptimal() {
+    let best = { rate: -1, temp:0, light:0, co2:0 };
+    for (let t=10; t<=40; t+=1) {
+      for (let l=1000; l<=9000; l+=500) {
+        for (let c=300; c<=800; c+=50) {
+          const rate = calculatePhotosynthesis(t,l,c);
+          if (rate > best.rate) best = { rate, temp:t, light:l, co2:c };
         }
       }
-
-      let explanation = "";
-      switch (scenario) {
-        case "tropical":
-          explanation = `열대 식물은 고온다습한 환경에서 잘 자랍니다. 온도가 높을수록 광합성에 관여하는 효소들의 활동이 활발해지고,\n빛과 CO₂가 풍부하면 광합성 속도가 증가합니다.\n따라서 높은 온도와 강한 빛, 높은 CO₂ 농도가 최적 조건이 됩니다.`;
-          break;
-        case "winter":
-          explanation = `겨울철 온실은 낮은 온도와 빛 부족 환경이므로, 효율적인 광합성을 위해 적당한 온도와 빛 조건을 유지하는 것이 중요합니다.\nCO₂ 농도는 상대적으로 높을수록 광합성에 도움이 됩니다.`;
-          break;
-        case "mountain":
-          explanation = `고산 지역은 기온이 낮고 공기 중 CO₂ 농도가 낮아 식물이 광합성에 적응하기 어렵습니다.\n따라서 적절한 온도와 빛을 확보하고 낮은 CO₂ 농도에서도 최대한 효율적으로 작용하는 조건이 필요합니다.`;
-          break;
-        case "desert":
-          explanation = `사막 식물은 강한 햇빛과 고온 환경에 적응해 있으며, 수분 손실을 줄이기 위해 광합성 효율을 높여야 합니다.\n따라서 고온과 강한 빛 조건에서 CO₂ 농도는 중간 수준이 최적입니다.`;
-          break;
-        default:
-          explanation = `선택한 시나리오에 따라 식물의 생육 환경과 광합성 최적 조건이 다릅니다.`;
-      }
-
-      aiResult.innerHTML = `
-        ✅ <strong>${scenarioSelect.options[scenarioSelect.selectedIndex].text}</strong>의 최적 조건:<br>
-        온도: <strong>${best.temp}°C</strong><br>
-        빛 세기: <strong>${best.light} lux</strong><br>
-        CO₂ 농도: <strong>${best.co2} ppm</strong><br>
-        예상 광합성량: <strong>${best.rate.toFixed(2)}</strong><br><br>
-        🔍 <strong>AI 설명:</strong><br>${explanation}
-      `;
     }
 
-    tempSlider.oninput = updateValues;
-    lightSlider.oninput = updateValues;
-    co2Slider.oninput = updateValues;
-    scenarioSelect.onchange = updateValues;
+    const scenario = scenarioSelect.value;
+    const easy = easyMode.checked;
+    let explanation = "", easyText = "";
 
-    updateValues();
-  </script>
+    switch (scenario) {
+      case "tropical":
+        explanation = `고온다습한 열대 환경에서는 효소가 활발히 작동해 광합성 속도가 빠릅니다.\n빛과 CO₂가 충분하면 더욱 효과적입니다.`;
+        easyText = `→ 따뜻하고 습한 환경, 밝은 빛, 많은 CO₂가 열대 식물에 좋아요.`;
+        break;
+      case "winter":
+        explanation = `겨울은 기온과 빛이 낮아 광합성이 느립니다.\n따라서 적당한 온도와 빛, CO₂ 농도가 필요합니다.`;
+        easyText = `→ 추운 겨울엔 따뜻하고 밝은 환경, CO₂를 충분히 공급해 주세요.`;
+        break;
+      case "mountain":
+        explanation = `고산은 CO₂ 농도도 낮고 기온도 낮습니다.\n빛은 있지만 효소 작용과 CO₂ 활용이 제한됩니다.`;
+        easyText = `→ 높은 산에서는 낮은 CO₂를 고려해 온도와 빛을 잘 맞춰야 해요.`;
+        break;
+      case "desert":
+        explanation = `사막 식물은 고온과 강한 빛에 적응하고, 물 손실을 줄이기 위해 효율적입니다.\n중간 정도의 CO₂가 적절히 작용합니다.`;
+        easyText = `→ 사막 환경엔 뜨겁고 밝고, CO₂는 너무 많지 않게!`;
+        break;
+      case "shade":
+        explanation = `그늘 식물은 빛이 약하므로 낮은 빛에서도 작용하는 효소가 중요합니다.\n따뜻한 온도와 낮은 빛, 적절한 CO₂ 농도가 필요합니다.`;
+        easyText = `→ 빛이 적어도 살아남는 식물! 온도와 CO₂ 조절이 핵심이에요.`;
+        break;
+      case "aquatic":
+        explanation = `수생 식물은 수온이 낮고 CO₂ 공급이 제한됩니다.\n적절한 온도와 빛 조건이 광합성에 중요합니다.`;
+        easyText = `→ 물속 식물은 시원한 온도, 보통 빛, 낮은 CO₂에서도 성장해요.`;
+        break;
+      default:
+        explanation = `선택한 환경마다 최적 조건은 달라집니다.`;
+    }
+
+    aiResult.innerHTML = `
+✅ <strong>${scenarioSelect.options[scenarioSelect.selectedIndex].text}</strong>의 최적 조건:
+온도: <strong>${best.temp}°C</strong>
+빛 세기: <strong>${best.light} lux</strong>
+CO₂ 농도: <strong>${best.co2} ppm</strong>
+예상 광합성량: <strong>${best.rate.toFixed(2)}</strong>
+
+🔍 <strong>AI 설명:</strong>
+${explanation}
+${easy ? `\n💡 <strong>쉬운 설명:</strong> ${easyText}` : ""}`;
+  }
+
+  tempSlider.oninput = updateValues;
+  lightSlider.oninput = updateValues;
+  co2Slider.oninput = updateValues;
+  scenarioSelect.onchange = updateValues;
+
+  updateValues();
+</script>
 
 </body>
 </html>
