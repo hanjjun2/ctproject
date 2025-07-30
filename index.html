@@ -1,141 +1,202 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-  <meta charset="UTF-8">
-  <title>전자기력 경로 탐색 문제</title>
+  <meta charset="UTF-8" />
+  <title>전자 미로</title>
   <style>
-    table {
-      border-collapse: collapse;
-      margin: 20px 0;
-    }
+    body { font-family: '맑은 고딕', sans-serif; background: #fafafa; }
+    h2, .description, #controls { text-align: center; }
+    table { border-collapse: collapse; margin: 10px auto; }
     td {
-      width: 50px;
-      height: 50px;
-      border: 1px solid #aaa;
-      text-align: center;
-      font-size: 20px;
+      width: 50px; height: 50px;
+      text-align: center; vertical-align: middle;
+      border: 1px solid #333; font-size: 24px; cursor: pointer;
+      transition: background-color 0.2s;
+    }
+    td:hover { background-color: #f3f4f6; }
+
+    .start { background-color: #a3e635; font-weight: bold; }
+    .end { background-color: #60a5fa; font-weight: bold; }
+    .path { background-color: #facc15; }
+    .correct { background-color: #fb923c; }
+
+    #controls { margin-top: 20px; }
+
+    .description {
+      width: 80%; margin: 10px auto; text-align: left;
+      background: #f1f1f1; padding: 15px; border-radius: 10px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+    }
+
+    .electron-icon {
+      display: inline-block;
+      width: 20px;
+      height: 20px;
+      background-image: url('https://cdn-icons-png.flaticon.com/512/2690/2690110.png'); /* 변경된 선명한 아이콘 */
+      background-size: cover;
+      vertical-align: middle;
+      margin-left: 5px;
+    }
+
+    button {
+      padding: 8px 16px;
+      margin: 0 10px;
+      border: none;
+      background-color: #3b82f6;
+      color: white;
+      border-radius: 6px;
+      font-size: 14px;
       cursor: pointer;
     }
-    .start {
-      background-color: #fdd;
-    }
-    .end {
-      background-color: #dfd;
-    }
-    .x, .o {
-      font-weight: bold;
-    }
-    .arrow {
-      font-size: 24px;
-      color: green;
-    }
-    #result {
-      margin-top: 10px;
-      font-weight: bold;
-    }
-    button {
-      margin: 10px 5px;
-      padding: 5px 10px;
+
+    button:hover {
+      background-color: #2563eb;
     }
   </style>
 </head>
 <body>
-  <h2>전자기력에 따른 전자의 이동 경로 탐색</h2>
-  <p>출발점: (0, 0) → 아래 방향으로 시작<br>도착점: (6, 3)</p>
-  <table id="grid"></table>
+
+<h2>전자 미로 문제</h2>
+
+<div class="description">
+  <p><strong>🧩 문제 설명:</strong></p>
+  <ul>
+    <li>전자는 출발지점(왼쪽 위)에서 시작하여 도착지점(오른쪽 아래)까지 도달해야 합니다.</li>
+    <li>전자는 항상 <strong>오른쪽 방향(→)</strong>으로 시작합니다.</li>
+  </ul>
+
+  <p><strong>🔁 이동 규칙:</strong></p>
+  <ul>
+    <li><code>빈칸</code>: 전자는 현재 방향 그대로 이동</li>
+    <li><code>+</code>: 전자는 <strong>시계방향 90도</strong> 회전 후 이동</li>
+    <li><code>-</code>: 전자는 <strong>반시계방향 90도</strong> 회전 후 이동</li>
+  </ul>
+
+  <p><strong>🖱️ 풀이 방법:</strong></p>
+  <ul>
+    <li>출발지점부터 도착지점까지 전자가 이동할 경로를 마우스로 클릭하여 선택하세요.</li>
+    <li><strong>정답 확인</strong> 버튼을 누르면 실제 전자의 경로가 주황색으로 표시됩니다.</li>
+  </ul>
+</div>
+
+<div id="maze-container"></div>
+
+<div id="controls">
   <button onclick="checkAnswer()">정답 확인</button>
-  <div id="result"></div>
+  <button onclick="generateMaze()">새 문제 생성</button>
+</div>
 
-  <script>
-    const map = [
-      ['S', '', '', ''],
-      ['', '', '', ''],
-      ['', '', '', ''],
-      ['o', '', '', ''],
-      ['o', '', '', ''],
-      ['', '', '', ''],
-      ['', '', '', 'E']
-    ];
+<script>
+const SIZE = 5;
+let maze = [], userPath = [], solutionPath = [];
+const dirs = ["up", "right", "down", "left"];
+const dirMap = {
+  up: [-1, 0],
+  down: [1, 0],
+  left: [0, -1],
+  right: [0, 1]
+};
 
-    const correctPath = [
-      [0,0], [1,0], [2,0], [3,0], [4,0], [5,0], [5,1], [5,2], [5,3], [6,3]
-    ];
+function rotate(dir, isPlus) {
+  let idx = dirs.indexOf(dir);
+  return dirs[(idx + (isPlus ? 1 : 3)) % 4];
+}
 
-    let currentDir = '↓';
-    let userPath = [];
-    let clickCount = 0;
-    let wrongCount = 0;
-
-    const dirArrows = {
-      '→': '→',
-      '↓': '↓',
-      '←': '←',
-      '↑': '↑'
-    };
-
-    function createGrid() {
-      const table = document.getElementById('grid');
-      for (let i = 0; i < map.length; i++) {
-        const row = document.createElement('tr');
-        for (let j = 0; j < map[0].length; j++) {
-          const cell = document.createElement('td');
-          cell.dataset.row = i;
-          cell.dataset.col = j;
-
-          if (map[i][j] === 'S') {
-            cell.className = 'start';
-            cell.textContent = 'S';
-          } else if (map[i][j] === 'E') {
-            cell.className = 'end';
-            cell.textContent = 'E';
-          } else if (map[i][j] === 'x') {
-            cell.className = 'x';
-            cell.textContent = 'x';
-          } else if (map[i][j] === 'o') {
-            cell.className = 'o';
-            cell.textContent = 'o';
-          }
-
-          cell.addEventListener('click', () => {
-            if (cell.textContent === '' || cell.classList.contains('arrow')) {
-              clickCount++;
-              const dir = prompt('방향을 입력하세요 (→, ↓, ←, ↑):');
-              if (dirArrows[dir]) {
-                cell.textContent = dirArrows[dir];
-                cell.classList.add('arrow');
-                userPath.push([parseInt(cell.dataset.row), parseInt(cell.dataset.col)]);
-              }
-            }
-          });
-
-          row.appendChild(cell);
-        }
-        table.appendChild(row);
-      }
-    }
-
-    function arraysEqual(a1, a2) {
-      return a1.length === a2.length && a1.every((v, i) => v[0] === a2[i][0] && v[1] === a2[i][1]);
-    }
-
-    function checkAnswer() {
-      const result = document.getElementById('result');
-      if (arraysEqual(userPath, correctPath)) {
-        result.textContent = '정답입니다!';
-        result.style.color = 'green';
+function drawMaze() {
+  const container = document.getElementById("maze-container");
+  container.innerHTML = "";
+  const table = document.createElement("table");
+  for (let i = 0; i < SIZE; i++) {
+    const row = document.createElement("tr");
+    for (let j = 0; j < SIZE; j++) {
+      const cell = document.createElement("td");
+      cell.dataset.row = i;
+      cell.dataset.col = j;
+      const val = maze[i][j];
+      if (i === 0 && j === 0) {
+        cell.classList.add("start");
+        cell.innerHTML = `→<span class="electron-icon"></span>`;
+      } else if (i === SIZE - 1 && j === SIZE - 1) {
+        cell.classList.add("end");
+        cell.innerText = "도착";
       } else {
-        wrongCount++;
-        if (wrongCount >= 2) {
-          result.innerHTML = '두 번 이상 틀렸습니다. 정답 경로:<br>' + correctPath.map(p => `(${p[0]},${p[1]})`).join(' → ');
-          result.style.color = 'red';
-        } else {
-          result.textContent = '틀렸습니다. 다시 시도해보세요!';
-          result.style.color = 'orange';
-        }
+        cell.innerText = val;
       }
+      cell.onclick = () => togglePath(i, j);
+      row.appendChild(cell);
     }
+    table.appendChild(row);
+  }
+  container.appendChild(table);
+}
 
-    createGrid();
-  </script>
+function togglePath(row, col) {
+  const td = document.querySelector(`td[data-row='${row}'][data-col='${col}']`);
+  const key = `${row},${col}`;
+  if (userPath.includes(key)) {
+    userPath = userPath.filter(k => k !== key);
+    td.classList.remove("path");
+  } else {
+    userPath.push(key);
+    td.classList.add("path");
+  }
+}
+
+function checkAnswer() {
+  clearCorrectPath();
+  for (const key of solutionPath) {
+    const [row, col] = key.split(',').map(Number);
+    document.querySelector(`td[data-row='${row}'][data-col='${col}']`).classList.add("correct");
+  }
+}
+
+function simulatePath(mz) {
+  let path = [];
+  let dir = "right";
+  let row = 0, col = 0;
+  path.push("0,0");
+
+  for (let step = 0; step < SIZE * SIZE; step++) {
+    let cell = mz[row][col];
+    if (cell === "+") dir = rotate(dir, true);
+    else if (cell === "-") dir = rotate(dir, false);
+    let [dr, dc] = dirMap[dir];
+    let nr = row + dr, nc = col + dc;
+    if (nr < 0 || nr >= SIZE || nc < 0 || nc >= SIZE) return null;
+    path.push(`${nr},${nc}`);
+    row = nr; col = nc;
+    if (row === SIZE - 1 && col === SIZE - 1) return path;
+  }
+  return null;
+}
+
+function generateMaze() {
+  let valid = false;
+  while (!valid) {
+    maze = Array.from({ length: SIZE }, () =>
+      Array.from({ length: SIZE }, () => {
+        const r = Math.random();
+        return r < 0.3 ? "+" : r < 0.6 ? "-" : "";
+      })
+    );
+    maze[0][0] = "";
+    maze[SIZE - 1][SIZE - 1] = "";
+    let path = simulatePath(maze);
+    if (path) {
+      solutionPath = path;
+      valid = true;
+    }
+  }
+  userPath = [];
+  drawMaze();
+}
+
+function clearCorrectPath() {
+  document.querySelectorAll("td").forEach(td => td.classList.remove("correct"));
+}
+
+generateMaze();
+</script>
+
 </body>
 </html>
