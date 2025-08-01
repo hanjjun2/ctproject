@@ -11,6 +11,8 @@
       margin: auto;
       font-size: 14px;
       line-height: 1.3;
+      background: white; /* 배경색을 흰색으로 고정 */
+      color: #222;    /* 글씨색을 진한 회색으로 변경 */
     }
     h1 {
       font-size: 1.6em;
@@ -24,13 +26,14 @@
     /* 공통 스펙트럼 스타일 */
     .spectrum {
       width: 320px;
-      background: black;
+      background: black; /* 스펙트럼 배경색을 검은색으로 유지 */
       height: 28px;
       position: relative;
       border-radius: 3px;
       user-select: none;
       box-sizing: border-box;
       margin: 0;
+      border: 1px solid #ddd; /* 밝은 배경에 대비되도록 테두리 추가 */
     }
 
     /* 미지 스펙트럼 + 텍스트 flex 정렬 */
@@ -44,6 +47,7 @@
     }
     .unknown-container strong {
       flex: 0 0 90px; /* 텍스트 고정폭 */
+      color: #333; /* 글씨색을 검은색에 가깝게 유지 */
     }
 
     /* 보기 텍스트 + 스펙트럼 flex 배치 */
@@ -56,6 +60,7 @@
     }
     #elementSpectra p strong {
       flex: 0 0 90px;
+      color: #333;
     }
     #elementSpectra .spectrum {
       flex-shrink: 0;
@@ -79,6 +84,7 @@
       cursor: pointer;
       font-size: 0.9em;
       user-select: none;
+      color: #333;
     }
     button {
       margin-left: 8px;
@@ -88,6 +94,7 @@
       border-radius: 4px;
       border: 1px solid #555;
       background: #f0f0f0;
+      color: #222;
       transition: background 0.2s ease;
     }
     button:hover {
@@ -117,8 +124,7 @@
 
   <form id="answerForm">
     <fieldset class="element-list" id="answerOptions">
-      <!-- 체크박스 동적 생성 -->
-    </fieldset>
+      </fieldset>
   </form>
 
   <button onclick="checkAnswer()">정답 확인</button>
@@ -141,18 +147,18 @@
   };
 
   const problems = [
-    { question: "수소와 헬륨이 혼합된 스펙트럼입니다. 포함된 원소를 모두 고르세요.", answer: ["H", "He"], unknown: [...elements.H.wl, ...elements.He.wl] },
-    { question: "나트륨과 산소가 혼합된 스펙트럼입니다. 포함된 원소를 모두 고르세요.", answer: ["Na", "O"], unknown: [...elements.Na.wl, ...elements.O.wl] },
-    { question: "칼륨과 칼슘이 포함된 스펙트럼입니다. 포함된 원소를 모두 고르세요.", answer: ["K", "Ca"], unknown: [...elements.K.wl, ...elements.Ca.wl] },
-    { question: "수소, 나트륨, 칼슘 세 원소가 혼합된 스펙트럼입니다. 포함된 원소를 모두 고르세요.", answer: ["H", "Na", "Ca"], unknown: [...elements.H.wl, ...elements.Na.wl, ...elements.Ca.wl] },
-    { question: "헬륨과 칼륨이 포함된 스펙트럼입니다. 포함된 원소를 모두 고르세요.", answer: ["He", "K"], unknown: [...elements.He.wl, ...elements.K.wl] },
-    { question: "수소, 산소, 칼슘 세 원소가 혼합된 스펙트럼입니다. 포함된 원소를 모두 고르세요.", answer: ["H", "O", "Ca"], unknown: [...elements.H.wl, ...elements.O.wl, ...elements.Ca.wl] },
-    { question: "나트륨, 칼륨, 산소가 포함된 스펙트럼입니다. 포함된 원소를 모두 고르세요.", answer: ["Na", "K", "O"], unknown: [...elements.Na.wl, ...elements.K.wl, ...elements.O.wl] },
-    { question: "헬륨, 칼슘, 수소가 포함된 스펙트럼입니다. 포함된 원소를 모두 고르세요.", answer: ["He", "Ca", "H"], unknown: [...elements.He.wl, ...elements.Ca.wl, ...elements.H.wl] },
-    { question: "수소, 헬륨, 나트륨, 산소가 혼합된 스펙트럼입니다. 포함된 원소를 모두 고르세요.", answer: ["H", "He", "Na", "O"], unknown: [...elements.H.wl, ...elements.He.wl, ...elements.Na.wl, ...elements.O.wl] },
-    { question: "칼슘과 산소가 포함된 스펙트럼입니다. 포함된 원소를 모두 고르세요.", answer: ["Ca", "O"], unknown: [...elements.Ca.wl, ...elements.O.wl] },
-    { question: "칼륨과 수소가 포함된 스펙트럼입니다. 포함된 원소를 모두 고르세요.", answer: ["K", "H"], unknown: [...elements.K.wl, ...elements.H.wl] },
-    { question: "헬륨, 나트륨, 칼슘이 포함된 스펙트럼입니다. 포함된 원소를 모두 고르세요.", answer: ["He", "Na", "Ca"], unknown: [...elements.He.wl, ...elements.Na.wl, ...elements.Ca.wl] }
+    { answer: ["H", "He"], unknown: [...elements.H.wl, ...elements.He.wl] },
+    { answer: ["Na", "O"], unknown: [...elements.Na.wl, ...elements.O.wl] },
+    { answer: ["K", "Ca"], unknown: [...elements.K.wl, ...elements.Ca.wl] },
+    { answer: ["H", "Na", "Ca"], unknown: [...elements.H.wl, ...elements.Na.wl, ...elements.Ca.wl] },
+    { answer: ["He", "K"], unknown: [...elements.He.wl, ...elements.K.wl] },
+    { answer: ["H", "O", "Ca"], unknown: [...elements.H.wl, ...elements.O.wl, ...elements.Ca.wl] },
+    { answer: ["Na", "K", "O"], unknown: [...elements.Na.wl, ...elements.K.wl, ...elements.O.wl] },
+    { answer: ["He", "Ca", "H"], unknown: [...elements.He.wl, ...elements.Ca.wl, ...elements.H.wl] },
+    { answer: ["H", "He", "Na", "O"], unknown: [...elements.H.wl, ...elements.He.wl, ...elements.Na.wl, ...elements.O.wl] },
+    { answer: ["Ca", "O"], unknown: [...elements.Ca.wl, ...elements.O.wl] },
+    { answer: ["K", "H"], unknown: [...elements.K.wl, ...elements.H.wl] },
+    { answer: ["He", "Na", "Ca"], unknown: [...elements.He.wl, ...elements.Na.wl, ...elements.Ca.wl] }
   ];
 
   let currentProblem;
@@ -194,7 +200,7 @@
     document.getElementById("result").innerText = "";
 
     currentProblem = problems[Math.floor(Math.random() * problems.length)];
-    document.getElementById("questionText").innerText = `[문제] ${currentProblem.question}`;
+    document.getElementById("questionText").innerText = "[문제] 아래 미지의 스펙트럼에 포함된 원소는 무엇인지 모두 고르세요.";
 
     drawSpectrum("unknown", currentProblem.unknown);
 
@@ -232,18 +238,13 @@
     const correctSet = new Set(correct);
     const checkedSet = new Set(checkedEls);
 
-    const correctPicked = checkedEls.filter(x => correctSet.has(x));
-    const missed = correct.filter(x => !checkedSet.has(x));
-    const wrongPicked = checkedEls.filter(x => !correctSet.has(x));
+    const isCorrect = correct.every(x => checkedSet.has(x)) && checkedEls.length === correct.length;
 
-    if (missed.length === 0 && wrongPicked.length === 0) {
-      result.innerHTML = `✅ 정답입니다! 잘 맞추셨어요.<br>선택한 원소: ${correctPicked.map(x => elements[x].name).join(", ")}`;
+    if (isCorrect) {
+      result.innerHTML = `✅ 정답입니다! 잘 맞추셨어요.`;
       result.style.color = "green";
     } else {
-      let msg = "❌ 오답입니다.<br>";
-      if (missed.length > 0) msg += `➜ 누락된 원소: ${missed.map(x => elements[x].name).join(", ")}<br>`;
-      if (wrongPicked.length > 0) msg += `➜ 틀리게 선택한 원소: ${wrongPicked.map(x => elements[x].name).join(", ")}`;
-      result.innerHTML = msg;
+      result.innerHTML = `❌ 오답입니다. 다시 한번 확인해 보세요.`;
       result.style.color = "red";
     }
   }
